@@ -1,0 +1,1 @@
+﻿<Assembly: System.Runtime.CompilerServices.InternalsVisibleTo("SQLiteSyncWM.TestProject")> 

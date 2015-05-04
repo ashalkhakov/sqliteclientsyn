@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SyncSchema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+  <SchemaDataSet>
+    <xs:schema id="NewDataSet" xmlns="" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" xmlns:msprop="urn:schemas-microsoft-com:xml-msprop">
+      <xs:element name="NewDataSet" msdata:IsDataSet="true" msdata:Locale="">
+        <xs:complexType>
+          <xs:choice minOccurs="0" maxOccurs="unbounded">
+            <xs:element name="TestTable" msdata:Locale="">
+              <xs:complexType>
+                <xs:sequence>
+                  <xs:element name="TestTable_id" msprop:ColumnLength="4" msprop:DataTypeName="int" type="xs:int" />
+                  <xs:element name="TestTable_date" msprop:ColumnLength="8" msprop:DataTypeName="datetime" type="xs:dateTime" minOccurs="0" />
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+          </xs:choice>
+        </xs:complexType>
+        <xs:unique name="Constraint1" msdata:PrimaryKey="true">
+          <xs:selector xpath=".//TestTable" />
+          <xs:field xpath="TestTable_id" />
+        </xs:unique>
+      </xs:element>
+    </xs:schema>
+    <diffgr:diffgram xmlns:msdata="urn:schemas-microsoft-com:xml-msdata" xmlns:diffgr="urn:schemas-microsoft-com:xml-diffgram-v1" />
+  </SchemaDataSet>
+</SyncSchema>

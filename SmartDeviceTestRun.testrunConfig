@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<TestRunConfiguration name="Local SmartDevices Test Run" id="8ac60e7c-2e7b-460a-add8-7517567fd300" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2006">
+  <Description>This is a default test run configuration for a local SmartDevice test run.</Description>
+  <Deployment>
+    <DeploymentItem filename="SharedLibs\SQLite.Interop.096.dll" />
+  </Deployment>
+  <Hosts type="Smart Device">
+    <DeviceHostRunConfigData name="Smart Device" deviceId="b2c48bd2-963d-4549-9169-1fa021dce484d6518ffb-710f-11d3-99f2-00105a0df099" deviceName="Windows Mobile 6 Professional Device" platformId="b2c48bd2-963d-4549-9169-1fa021dce484" platformName="Windows Mobile 6 Professional SDK" uiPlatformId="b2c48bd2-963d-4549-9169-1fa021dce484" />
+  </Hosts>
+  <TestTypeSpecific />
+</TestRunConfiguration>
