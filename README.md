@@ -17,6 +17,16 @@ WinMobile dependencies:
 - As Good As It Gets Serialization
 - http://blogs.clariusconsulting.net/kzu/how-to-create-and-run-compact-framework-unit-tests-with-vs2008-and-testdriven-net/
 
+Troubleshooting
+---------------
+
+* you get: "Unable get to type ..." and "An error message cannot be
+  displayed because an optional resource assembly containing it cannot
+  be found"
+    * copy C:\Program
+      Files\Microsoft.NET\SDK\CompactFramework\v3.5\WindowsCE\Diagnostics\NETCFv35.Messages.EN.cab
+      to the device and install it, then run the tests again
+
 License
 -------
 
