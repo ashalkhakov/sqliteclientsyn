@@ -103,67 +103,6 @@ Public NotInheritable Class Serializator(Of T As Class)
         Return serializableObject
     End Function
 
-    ''' <summary>
-    ''' Loads an object from an XML file in Document format, located in a specified isolated storage area.
-    ''' </summary>
-    ''' <example>
-    ''' <code>
-    ''' serializableObject = ObjectXMLSerializer&lt;SerializableObject&gt;.Load("XMLObjects.xml", IsolatedStorageFile.GetUserStoreForAssembly());
-    ''' </code>
-    ''' </example>
-    ''' <param name="fileName">Name of the file in the isolated storage area to load the object from.</param>
-    ''' <param name="isolatedStorageDirectory">Isolated storage area directory containing the XML file to load the object from.</param>
-    ''' <returns>Object loaded from an XML file in Document format located in a specified isolated storage area.</returns>
-    'Public Shared Function Load(ByVal fileName As String, ByVal isolatedStorageDirectory As IsolatedStorageFile) As T
-    '    Dim serializableObject As T = LoadFromDocumentFormat(Nothing, fileName, isolatedStorageDirectory)
-    '    Return serializableObject
-    'End Function
-
-    ''' <summary>
-    ''' Loads an object from an XML file located in a specified isolated storage area, using a specified serialized format.
-    ''' </summary>
-    ''' <example>
-    ''' <code>
-    ''' serializableObject = ObjectXMLSerializer&lt;SerializableObject&gt;.Load("XMLObjects.xml", IsolatedStorageFile.GetUserStoreForAssembly(), SerializedFormat.Binary);
-    ''' </code>
-    ''' </example>		
-    ''' <param name="fileName">Name of the file in the isolated storage area to load the object from.</param>
-    ''' <param name="isolatedStorageDirectory">Isolated storage area directory containing the XML file to load the object from.</param>
-    ''' <param name="serializedFormat">XML serialized format used to load the object.</param>        
-    ''' <returns>Object loaded from an XML file located in a specified isolated storage area, using a specified serialized format.</returns>
-    'Public Shared Function Load(ByVal fileName As String, ByVal isolatedStorageDirectory As IsolatedStorageFile, ByVal serializedFormat As SerializedFormat) As T
-    '    Dim serializableObject As T = Nothing
-
-    '    Select Case serializedFormat
-    '        Case serializedFormat.Binary
-    '            serializableObject = LoadFromBinaryFormat(fileName, isolatedStorageDirectory)
-    '            Exit Select
-    '        Case Else ' SerializedFormat.Document, Else
-
-    '            serializableObject = LoadFromDocumentFormat(Nothing, fileName, isolatedStorageDirectory)
-    '            Exit Select
-    '    End Select
-
-    '    Return serializableObject
-    'End Function
-
-    ''' <summary>
-    ''' Loads an object from an XML file in Document format, located in a specified isolated storage area, and supplying extra data types to enable deserialization of custom types within the object.
-    ''' </summary>
-    ''' <example>
-    ''' <code>
-    ''' serializableObject = ObjectXMLSerializer&lt;SerializableObject&gt;.Load("XMLObjects.xml", IsolatedStorageFile.GetUserStoreForAssembly(), new Type[] { typeof(MyCustomType) });
-    ''' </code>
-    ''' </example>		
-    ''' <param name="fileName">Name of the file in the isolated storage area to load the object from.</param>
-    ''' <param name="isolatedStorageDirectory">Isolated storage area directory containing the XML file to load the object from.</param>
-    ''' <param name="extraTypes">Extra data types to enable deserialization of custom types within the object.</param>
-    ''' <returns>Object loaded from an XML file located in a specified isolated storage area, using a specified serialized format.</returns>
-    'Public Shared Function Load(ByVal fileName As String, ByVal isolatedStorageDirectory As IsolatedStorageFile, ByVal extraTypes As System.Type()) As T
-    '    Dim serializableObject As T = LoadFromDocumentFormat(Nothing, fileName, isolatedStorageDirectory)
-    '    Return serializableObject
-    'End Function
-
 #End Region
 
 #Region "Save methods"
@@ -231,70 +170,6 @@ Public NotInheritable Class Serializator(Of T As Class)
     Public Shared Sub Save(ByVal serializableObject As T, ByVal path As String, ByVal extraTypes As System.Type())
         SaveToDocumentFormat(serializableObject, extraTypes, path) 'Nothing
     End Sub
-
-    ''' <summary>
-    ''' Saves an object to an XML file in Document format, located in a specified isolated storage area.
-    ''' </summary>
-    ''' <example>
-    ''' <code>        
-    ''' SerializableObject serializableObject = new SerializableObject();
-    ''' 
-    ''' ObjectXMLSerializer&lt;SerializableObject&gt;.Save(serializableObject, "XMLObjects.xml", IsolatedStorageFile.GetUserStoreForAssembly());
-    ''' </code>
-    ''' </example>
-    ''' <param name="serializableObject">Serializable object to be saved to file.</param>
-    ''' <param name="fileName">Name of the file in the isolated storage area to save the object to.</param>
-    ''' <param name="isolatedStorageDirectory">Isolated storage area directory containing the XML file to save the object to.</param>
-    ' ByVal isolatedStorageDirectory As IsolatedStorageFile
-    'Public Shared Sub Save(ByVal serializableObject As T, ByVal fileName As String)
-    '    SaveToDocumentFormat(serializableObject, Nothing, fileName) 'isolatedStorageDirectory
-    'End Sub
-
-    ''' <summary>
-    ''' Saves an object to an XML file located in a specified isolated storage area, using a specified serialized format.
-    ''' </summary>
-    ''' <example>
-    ''' <code>        
-    ''' SerializableObject serializableObject = new SerializableObject();
-    ''' 
-    ''' ObjectXMLSerializer&lt;SerializableObject&gt;.Save(serializableObject, "XMLObjects.xml", IsolatedStorageFile.GetUserStoreForAssembly(), SerializedFormat.Binary);
-    ''' </code>
-    ''' </example>
-    ''' <param name="serializableObject">Serializable object to be saved to file.</param>
-    ''' <param name="fileName">Name of the file in the isolated storage area to save the object to.</param>
-    ''' <param name="isolatedStorageDirectory">Isolated storage area directory containing the XML file to save the object to.</param>
-    ''' <param name="serializedFormat">XML serialized format used to save the object.</param>        
-    ' ByVal isolatedStorageDirectory As IsolatedStorageFile
-    'Public Shared Sub Save(ByVal serializableObject As T, ByVal fileName As String, ByVal serializedFormat As SerializedFormat)
-    '    Select Case serializedFormat
-    '        Case serializedFormat.Binary
-    '            SaveToBinaryFormat(serializableObject, fileName) ' isolatedStorageDirectory
-    '            Exit Select
-    '        Case Else 'SerializedFormat.Document, Else
-
-    '            SaveToDocumentFormat(serializableObject, Nothing, fileName) ' isolatedStorageDirectory
-    '            Exit Select
-    '    End Select
-    'End Sub
-
-    ''' <summary>
-    ''' Saves an object to an XML file in Document format, located in a specified isolated storage area, and supplying extra data types to enable serialization of custom types within the object.
-    ''' </summary>
-    ''' <example>
-    ''' <code>
-    ''' SerializableObject serializableObject = new SerializableObject();
-    ''' 
-    ''' ObjectXMLSerializer&lt;SerializableObject&gt;.Save(serializableObject, "XMLObjects.xml", IsolatedStorageFile.GetUserStoreForAssembly(), new Type[] { typeof(MyCustomType) });
-    ''' </code>
-    ''' </example>		
-    ''' <param name="serializableObject">Serializable object to be saved to file.</param>
-    ''' <param name="fileName">Name of the file in the isolated storage area to save the object to.</param>
-    ''' <param name="isolatedStorageDirectory">Isolated storage area directory containing the XML file to save the object to.</param>
-    ''' <param name="extraTypes">Extra data types to enable serialization of custom types within the object.</param>
-    ' ByVal isolatedStorageDirectory As IsolatedStorageFile
-    'Public Shared Sub Save(ByVal serializableObject As T, ByVal fileName As String, ByVal extraTypes As System.Type())
-    '    SaveToDocumentFormat(serializableObject, Nothing, fileName) 'isolatedStorageDirectory
-    'End Sub
 
 #End Region
 

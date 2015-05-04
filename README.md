@@ -10,6 +10,13 @@ For usage example, please see
 SQL Server CE code to use SQLite, but it is a pretty straightforward
 thing to do.
 
+Third-party dependencies
+------------------------
+
+WinMobile dependencies:
+- As Good As It Gets Serialization
+- http://blogs.clariusconsulting.net/kzu/how-to-create-and-run-compact-framework-unit-tests-with-vs2008-and-testdriven-net/
+
 License
 -------
 
