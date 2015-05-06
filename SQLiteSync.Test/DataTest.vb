@@ -1,7 +1,7 @@
 ﻿Imports System.Data
 Imports System.IO
 #If PocketPC Then
-Imports AsGoodAsItGets.System.Runtime.Serialization.Formatters.Binary
+Imports SQLiteSync.Serialization
 #Else
 Imports System.Runtime.Serialization.Formatters.Binary
 #End If

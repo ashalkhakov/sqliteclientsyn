@@ -54,7 +54,6 @@
     <NoConfig>true</NoConfig>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AsGoodAsItGets.Serialization, Version=4.5.15.105, Culture=neutral, PublicKeyToken=df717cecd4e9a0eb, processorArchitecture=MSIL" />
     <Reference Include="Microsoft.Synchronization.Data, Version=1.0.6000.0, Culture=neutral, PublicKeyToken=3be235df1c8d2ad3, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -100,6 +99,12 @@
       <LastGenOutput>Resources.Designer.vb</LastGenOutput>
       <CustomToolNamespace>My.Resources</CustomToolNamespace>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SQLiteSync.Serialization\SQLiteSync.Serialization.csproj">
+      <Project>{9CC2E808-DC6C-4723-82E9-093F09E822D1}</Project>
+      <Name>SQLiteSync.Serialization</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CompactFramework.VisualBasic.targets" />
   <ProjectExtensions>

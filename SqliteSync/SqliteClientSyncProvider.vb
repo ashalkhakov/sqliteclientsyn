@@ -3,6 +3,17 @@ Imports Microsoft.Synchronization.Data
 Imports System.IO
 Imports Tools
 
+Public Class BinaryException
+    Inherits Exception
+
+    Public Array As Byte()
+
+    Public Sub New(ByVal arr As Byte())
+        Array = arr
+    End Sub
+End Class
+
+
 Public Class SqliteClientSyncProvider
     Inherits ClientSyncProvider
     Private _ClientId As Guid = Guid.Empty
@@ -1055,15 +1066,19 @@ NextRow:
         Me._SQLiteMetaDataHelper.SetAnchorValue(tableName, AnchorType.SentAnchor, AnchorValue)
     End Sub
 
+    Private Enum AnchorValueType As Byte
+        'Null = 0
+        Int64 = 1
+        ByteArray = 2
+    End Enum
+
+
     Private Function SerializeAnchorValue(ByVal anchorVal As Object) As Byte()
         If anchorVal Is Nothing Then Return Nothing
 
-        Dim serializationStream As New MemoryStream()
 #If PocketPC Then
-        Dim BF As New AsGoodAsItGets.System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
-#Else
-        Dim BF As New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
-#End If
+        Dim serializationStream As New MemoryStream()
+        Dim BF As New SQLiteSync.Serialization.BinaryFormatter()
 
         BF.Serialize(serializationStream, anchorVal)
 
@@ -1072,24 +1087,40 @@ NextRow:
         serializationStream.Dispose()
 
         Return ret
+#Else
+        Dim serializationStream As New MemoryStream()
+        Dim BF As New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
+
+        BF.Serialize(serializationStream, anchorVal)
+
+        Dim ret As Byte() = serializationStream.ToArray()
+
+        serializationStream.Dispose()
+
+        Return ret
+#End If
     End Function
 
     Private Function DeserializeAnchorValue(ByVal anchor As Byte()) As Object
-        If anchor Is Nothing Then Return Nothing
+        If anchor Is Nothing Or anchor.Length = 0 Then Return Nothing
 
-        Dim serializationStream As New MemoryStream(anchor)
 #If PocketPC Then
-        Dim BF As New AsGoodAsItGets.System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
-#Else
-        Dim BF As New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
-#End If
-
+        Dim serializationStream As New MemoryStream(anchor)
+        Dim BF As New SQLiteSync.Serialization.BinaryFormatter()
         Dim ret As Object = BF.Deserialize(serializationStream)
 
         serializationStream.Dispose()
 
         Return ret
+#Else
+        Dim serializationStream As New MemoryStream(anchor)
+        Dim BF As New System.Runtime.Serialization.Formatters.Binary.BinaryFormatter()
+        Dim ret As Object = BF.Deserialize(serializationStream)
 
+        serializationStream.Dispose()
+
+        Return ret
+#End If
     End Function
 
     Private Function AnchorToInt64(ByVal Anchor As SyncAnchor) As Int64

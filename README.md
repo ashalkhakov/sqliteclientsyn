@@ -14,8 +14,16 @@ Third-party dependencies
 ------------------------
 
 WinMobile dependencies:
-- As Good As It Gets Serialization
 - http://blogs.clariusconsulting.net/kzu/how-to-create-and-run-compact-framework-unit-tests-with-vs2008-and-testdriven-net/
+
+SQLiteSync.Synchronization
+--------------------------
+
+This is based on Mono
+[System.Runtime.Serialization](https://github.com/mosa/Mono-Class-Libraries/tree/master/mcs/class/corlib/System.Runtime.Serialization)
+code. Note that this is NOT a general-purpose serialization solution,
+but it does work if the server side serializes some very simple
+objects in the SyncAnchor.
 
 Troubleshooting
 ---------------
@@ -30,6 +38,6 @@ Troubleshooting
 License
 -------
 
-Public domain.
+Public domain, unless noted otherwise.
 
 --Artyom Shalkhakov, artyom DOT shalkhakov AT gmail DOT com

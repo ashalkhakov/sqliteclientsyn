@@ -1,7 +1,5 @@
 Imports System.IO
-#If PocketPC Then
-Imports AsGoodAsItGets.System.Runtime.Serialization.Formatters.Binary
-#Else
+#If Not PocketPC Then
 Imports System.Runtime.Serialization.Formatters.Binary
 #End If
 Imports System.Xml.Serialization
@@ -76,7 +74,11 @@ Public NotInheritable Class Serializator(Of T As Class)
 
         Select Case serializedFormat
             Case serializedFormat.Binary
+#If PocketPC Then
+                Throw New NotImplementedException("Load: binary not implemented")
+#Else
                 serializableObject = LoadFromBinaryFormat(path) 'Nothing
+#End If
                 Exit Select
             Case Else 'SerializedFormat.Document
 
@@ -145,7 +147,11 @@ Public NotInheritable Class Serializator(Of T As Class)
     Public Shared Sub Save(ByVal serializableObject As T, ByVal path As String, ByVal serializedFormat As SerializedFormat)
         Select Case serializedFormat
             Case serializedFormat.Binary
+#If PocketPC Then
+                Throw New NotSupportedException("Saving to binary format not implemented!")
+#Else
                 SaveToBinaryFormat(serializableObject, path) ' Nothing
+#End If
                 Exit Select
             Case Else ' SerializedFormat.Document, Else
 
@@ -187,6 +193,7 @@ Public NotInheritable Class Serializator(Of T As Class)
         Return fileStream
     End Function
 
+#If Not PocketPC Then
     'ByVal isolatedStorageFolder As IsolatedStorageFile
     Private Shared Function LoadFromBinaryFormat(ByVal path As String) As T
         Dim serializableObject As T = Nothing
@@ -196,9 +203,9 @@ Public NotInheritable Class Serializator(Of T As Class)
             Dim binaryFormatter As New BinaryFormatter()
             serializableObject = TryCast(binaryFormatter.Deserialize(fileStream), T)
         End Using
-
         Return serializableObject
     End Function
+#End If
 
     'ByVal isolatedStorageFolder As IsolatedStorageFile
     Private Shared Function LoadFromDocumentFormat(ByVal extraTypes As System.Type(), ByVal path As String) As T
@@ -266,6 +273,7 @@ Public NotInheritable Class Serializator(Of T As Class)
         End Using
     End Sub
 
+#If Not PocketPC Then
     'ByVal isolatedStorageFolder As IsolatedStorageFile
     Private Shared Sub SaveToBinaryFormat(ByVal serializableObject As T, ByVal path As String)
         'isolatedStorageFolder
@@ -274,6 +282,7 @@ Public NotInheritable Class Serializator(Of T As Class)
             binaryFormatter.Serialize(fileStream, serializableObject)
         End Using
     End Sub
+#End If
 
 #End Region
 End Class

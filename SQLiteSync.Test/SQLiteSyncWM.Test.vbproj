@@ -53,7 +53,6 @@
     <NoConfig>true</NoConfig>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="AsGoodAsItGets.Serialization, Version=4.5.15.105, Culture=neutral, PublicKeyToken=df717cecd4e9a0eb, processorArchitecture=MSIL" />
     <Reference Include="Microsoft.Synchronization.Data, Version=1.0.6000.0, Culture=neutral, PublicKeyToken=3be235df1c8d2ad3, processorArchitecture=MSIL" />
     <Reference Include="Microsoft.VisualStudio.SmartDevice.UnitTestFramework, Version=9.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <Private>False</Private>
@@ -96,6 +95,10 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\SQLiteSync.Serialization\SQLiteSync.Serialization.csproj">
+      <Project>{9CC2E808-DC6C-4723-82E9-093F09E822D1}</Project>
+      <Name>SQLiteSync.Serialization</Name>
+    </ProjectReference>
     <ProjectReference Include="..\SQLiteSync\SQLiteSyncWM.vbproj">
       <Project>{4983CE76-6353-47E3-B8D2-2B485372DD7B}</Project>
       <Name>SQLiteSyncWM</Name>

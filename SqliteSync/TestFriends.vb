@@ -1,1 +1,1 @@
-﻿<Assembly: System.Runtime.CompilerServices.InternalsVisibleTo("SQLiteSyncWM.TestProject")> 
+﻿<Assembly: System.Runtime.CompilerServices.InternalsVisibleTo("SQLiteSync.TestProject")> 
