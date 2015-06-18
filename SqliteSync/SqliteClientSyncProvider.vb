@@ -969,6 +969,59 @@ NextRow:
             StringBuilder.AppendFormat("PRIMARY KEY ({0})", String.Join(",", Table.PrimaryKey))
         End If
 
+        'Foreign key constraints
+        'NOTE: SQLite doesn't verify that constraints are valid during creation
+        If Table.ForeignKeys.Count > 0 Then
+            StringBuilder.Append(",")
+            StringBuilder.AppendLine()
+        End If
+        For i As Integer = 0 To Table.ForeignKeys.Count - 1
+            Dim ForeignKey As SyncSchemaForeignKey = Table.ForeignKeys(i)
+            StringBuilder.Append("FOREIGN KEY (")
+            For j As Integer = 0 To ForeignKey.ParentColumns.Count - 1
+                Dim ColName As String = ForeignKey.ParentColumns(j)
+                StringBuilder.Append(ColName)
+                'not last column?
+                If j < ForeignKey.ParentColumns.Count - 1 Then
+                    StringBuilder.Append(", ")
+                End If
+            Next
+            StringBuilder.Append(") REFERENCES ")
+            StringBuilder.Append(ForeignKey.ChildTable)
+            StringBuilder.Append(" (")
+            For j As Integer = 0 To ForeignKey.ChildColumns.Count - 1
+                Dim ColName As String = ForeignKey.ChildColumns(j)
+                StringBuilder.Append(ColName)
+                'not last column?
+                If j < ForeignKey.ChildColumns.Count - 1 Then
+                    StringBuilder.Append(", ")
+                End If
+            Next
+            StringBuilder.Append(")")
+            StringBuilder.Append(" ON DELETE ")
+            Select Case ForeignKey.DeleteRule
+                Case SyncSchemaForeignKeyRule.SetDefault
+                    StringBuilder.Append("SET DEFAULT")
+                Case SyncSchemaForeignKeyRule.SetNull
+                    StringBuilder.Append("SET NULL")
+                Case SyncSchemaForeignKeyRule.Cascade
+                    StringBuilder.Append("CASCADE")
+                Case Else
+                    StringBuilder.Append("RESTRICT")
+            End Select
+            StringBuilder.Append(" ON UPDATE ")
+            Select Case ForeignKey.UpdateRule
+                Case SyncSchemaForeignKeyRule.SetDefault
+                    StringBuilder.Append("SET DEFAULT")
+                Case SyncSchemaForeignKeyRule.SetNull
+                    StringBuilder.Append("SET NULL")
+                Case SyncSchemaForeignKeyRule.Cascade
+                    StringBuilder.Append("CASCADE")
+                Case Else
+                    StringBuilder.Append("RESTRICT")
+            End Select
+            StringBuilder.AppendLine()
+        Next
         StringBuilder.Append(");")
 
 
