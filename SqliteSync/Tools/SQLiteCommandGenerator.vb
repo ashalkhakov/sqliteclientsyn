@@ -157,7 +157,7 @@ Namespace Tools
                 'delete from tombstone too.
                 Command.CommandText = String.Format("DELETE FROM {0} WHERE {1} AND NOT EXISTS(SELECT * FROM {0}_tombstone WHERE {1}); " & _
                                                     "DELETE FROM {0}_tombstone WHERE {1};" _
-                                                    , Me._TableName, Me._Where, CType(Me._CommonColumns(0), SQLite.SQLiteParameter).SourceColumn)
+                                                    , Me._TableName, Me._Where)
             End If
 
             Me._DeleteCommand = Command
