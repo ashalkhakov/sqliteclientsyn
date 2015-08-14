@@ -1155,7 +1155,8 @@ NextRow:
     End Function
 
     Private Function DeserializeAnchorValue(ByVal anchor As Byte()) As Object
-        If anchor Is Nothing Or anchor.Length = 0 Then Return Nothing
+        If anchor Is Nothing Then Return Nothing
+        If anchor.Length = 0 Then Return Nothing
 
 #If PocketPC Then
         Dim serializationStream As New MemoryStream(anchor)

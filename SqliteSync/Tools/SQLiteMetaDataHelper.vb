@@ -188,13 +188,15 @@ Namespace Tools
         Public Sub SetAnchorValue(ByVal tableName As String, ByVal AnchorType As AnchorType, ByVal AnchorValue As Object)
             Using CMDUpdAnchor As New SQLite.SQLiteCommand(_Connection)
                 CMDUpdAnchor.Transaction = _Transaction
-                If AnchorType = Tools.AnchorType.SentAnchor Then
-                    If Not TypeOf AnchorValue Is Int64 Then
-                        Throw New ArgumentException("Sent anchor value must be int64.", "AnchorValue")
-                    End If
-                Else
-                    If Not TypeOf AnchorValue Is Long And Not TypeOf AnchorValue Is Byte() Then
-                        Throw New ArgumentException("Received anchor value must be long or byte().", "AnchorValue")
+                If Not AnchorValue Is Nothing Then
+                    If AnchorType = Tools.AnchorType.SentAnchor Then
+                        If Not TypeOf AnchorValue Is Int64 Then
+                            Throw New ArgumentException("Sent anchor value must be int64.", "AnchorValue")
+                        End If
+                    Else
+                        If Not TypeOf AnchorValue Is Long And Not TypeOf AnchorValue Is Byte() Then
+                            Throw New ArgumentException("Received anchor value must be long or byte().", "AnchorValue")
+                        End If
                     End If
                 End If
 
@@ -216,17 +218,19 @@ Namespace Tools
                 'Sql2000 and 2005 anchor values are byte()
                 'Sql2008 anchor values are long
                 'SQLITE save timespan.
-                If TypeOf AnchorValue Is Byte() Then
-                    CMDUpdAnchor.Parameters.Add("@Anchor", DbType.String).Value = "HEX" & HexEncoding.ToString(CType(AnchorValue, Byte()))
-                ElseIf TypeOf AnchorValue Is Long Then
-                    CMDUpdAnchor.Parameters.Add("@Anchor", DbType.String).Value = "LNG" & CType(AnchorValue, Long)
-                ElseIf TypeOf AnchorValue Is DateTime Then
-                    CMDUpdAnchor.Parameters.Add("@Anchor", DbType.Int64).Value = CType(AnchorValue, Int64)
+                If AnchorValue Is Nothing Then
+                    CMDUpdAnchor.Parameters.Add(New SQLite.SQLiteParameter("@Anchor"))
+                Else
+                    If TypeOf AnchorValue Is Byte() Then
+                        CMDUpdAnchor.Parameters.Add("@Anchor", DbType.String).Value = "HEX" & HexEncoding.ToString(CType(AnchorValue, Byte()))
+                    ElseIf TypeOf AnchorValue Is Long Then
+                        CMDUpdAnchor.Parameters.Add("@Anchor", DbType.String).Value = "LNG" & CType(AnchorValue, Long)
+                    ElseIf TypeOf AnchorValue Is DateTime Then
+                        CMDUpdAnchor.Parameters.Add("@Anchor", DbType.Int64).Value = CType(AnchorValue, Int64)
+                    End If
                 End If
 
-
                 CMDUpdAnchor.ExecuteNonQuery()
-
             End Using
         End Sub
 
