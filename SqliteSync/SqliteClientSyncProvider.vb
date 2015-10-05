@@ -118,7 +118,8 @@ Public Class SqliteClientSyncProvider
                     End Using
                 End If
 
-                If Table.GetChanges(DataRowState.Added) IsNot Nothing AndAlso Table.GetChanges(DataRowState.Added).Rows.Count <> 0 Then
+                'If Table.GetChanges(DataRowState.Added) IsNot Nothing AndAlso Table.GetChanges(DataRowState.Added).Rows.Count <> 0 Then
+                If TableProgress.Inserts > 0 Then
                     SyncTracer.Info("")
                     SyncTracer.Verbose(1, "----- Applying Inserts for Table {0} -----", TableMetadata.TableName)
                     ApplyInserts(TableMetadata, _
@@ -133,7 +134,8 @@ Public Class SqliteClientSyncProvider
                     SyncTracer.Verbose(1, "----- End Applying Inserts for Table {0} -----", TableMetadata.TableName)
                 End If
 
-                If Table.GetChanges(DataRowState.Modified) IsNot Nothing AndAlso Table.GetChanges(DataRowState.Modified).Rows.Count <> 0 Then
+                'If Table.GetChanges(DataRowState.Modified) IsNot Nothing AndAlso Table.GetChanges(DataRowState.Modified).Rows.Count <> 0 Then
+                If TableProgress.Updates > 0 Then
                     SyncTracer.Info("")
                     SyncTracer.Verbose(1, "----- Applying Updates for Table {0} -----", TableMetadata.TableName)
                     ApplyUpdates(TableMetadata, _
@@ -148,7 +150,8 @@ Public Class SqliteClientSyncProvider
                     SyncTracer.Verbose(1, "----- End Applying Updates for Table {0} -----", TableMetadata.TableName)
                 End If
 
-                If Table.GetChanges(DataRowState.Deleted) IsNot Nothing AndAlso Table.GetChanges(DataRowState.Deleted).Rows.Count <> 0 Then
+                'If Table.GetChanges(DataRowState.Deleted) IsNot Nothing AndAlso Table.GetChanges(DataRowState.Deleted).Rows.Count <> 0 Then
+                If TableProgress.Deletes > 0 Then
                     SyncTracer.Info("")
                     SyncTracer.Verbose(1, "----- Applying Deletes for Table {0} -----", TableMetadata.TableName)
                     ApplyDeletes(TableMetadata, _
@@ -164,6 +167,7 @@ Public Class SqliteClientSyncProvider
                 End If
             End Using
 
+            GC.Collect() ' AS-20151002: unfortunate but... do it
         Next
 
         For Each Table As SyncTableMetadata In groupMetadata.TablesMetadata
@@ -197,13 +201,16 @@ Public Class SqliteClientSyncProvider
                             ByVal SyncContext As SyncContext, _
                             ByVal SyncSession As SyncSession)
 
+        Using SelectCountCommand As SQLite.SQLiteCommand = SqliteCommandGen.SelectCountCommand, _
+            InsertCommand As SQLite.SQLiteCommand = SqliteCommandGen.InsertCommand, _
+            SelectCommand As SQLite.SQLiteCommand = SqliteCommandGen.SelectCommand, _
+            UpdateCommand As SQLite.SQLiteCommand = SqliteCommandGen.UpdateCommand
 
-        For Each Row As DataRow In DataTable.Rows
-            'Verify if exists row with the same id in the client database.
+            For Each Row As DataRow In DataTable.Rows
+                'Verify if exists row with the same id in the client database.
 
 RetryClientInsertServerInsert:
 
-            Using SelectCountCommand As SQLite.SQLiteCommand = SqliteCommandGen.SelectCountCommand
                 SetParameters(SelectCountCommand, Row)
                 If CType(SelectCountCommand.ExecuteScalar(), Integer) > 0 Then
 
@@ -212,11 +219,9 @@ RetryClientInsertServerInsert:
                     Conflict = New SyncConflict(ConflictType.ClientInsertServerInsert, SyncStage.ApplyingInserts)
                     Conflict.ClientChange = New DataTable
 
-                    Using SelectCommand As SQLite.SQLiteCommand = SqliteCommandGen.SelectCommand
-                        SetParameters(SelectCommand, Row)
-                        Using Da As New SQLite.SQLiteDataAdapter(SelectCommand)
-                            Da.Fill(Conflict.ClientChange)
-                        End Using
+                    SetParameters(SelectCommand, Row)
+                    Using Da As New SQLite.SQLiteDataAdapter(SelectCommand)
+                        Da.Fill(Conflict.ClientChange)
                     End Using
 
                     Conflict.ServerChange = DataTable.Clone
@@ -237,13 +242,11 @@ RetryClientInsertServerInsert:
                             Next
                             GoTo RetryClientInsertServerInsert
                         Case Data.ApplyAction.RetryWithForceWrite
-                            Using UpdateCommand As SQLite.SQLiteCommand = SqliteCommandGen.UpdateCommand
-                                SetParameters(UpdateCommand, Row)
-                                If UpdateCommand.Parameters.Contains("@__sysChangeTxBsn") Then
-                                    UpdateCommand.Parameters("@__sysChangeTxBsn").Value = -1 'Prevent the execution of update trigger.
-                                End If
-                                UpdateCommand.ExecuteNonQuery()
-                            End Using
+                            SetParameters(UpdateCommand, Row)
+                            If UpdateCommand.Parameters.Contains("@__sysChangeTxBsn") Then
+                                UpdateCommand.Parameters("@__sysChangeTxBsn").Value = -1 'Prevent the execution of update trigger.
+                            End If
+                            UpdateCommand.ExecuteNonQuery()
                             TableProgress.ChangesApplied += 1
                             GoTo NextRow 'continue for
                             'Case Data.ApplyAction.RetryNextSync
@@ -251,21 +254,18 @@ RetryClientInsertServerInsert:
                             '    Throw New SyncAbortedException("Sync error due a ClientInsertServerInsert conflict.")
                     End Select
                 End If
-            End Using
-            '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-            'Apply insert to database.
-            Using InsertCommand As SQLite.SQLiteCommand = SqliteCommandGen.InsertCommand
+                '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+                'Apply insert to database.
                 SetParameters(InsertCommand, Row)
                 InsertCommand.ExecuteNonQuery()
-            End Using
-            '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-            TableProgress.ChangesApplied += 1
-
+                '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+                TableProgress.ChangesApplied += 1
 
 NextRow:
-            Row.AcceptChanges()
-            RaiseEvent SyncProgress(Me, New SyncProgressEventArgs(TableMetadata, TableProgress, GroupMetadata, GroupProgress, SyncStage.ApplyingInserts))
-        Next
+                Row.AcceptChanges()
+                RaiseEvent SyncProgress(Me, New SyncProgressEventArgs(TableMetadata, TableProgress, GroupMetadata, GroupProgress, SyncStage.ApplyingInserts))
+            Next
+        End Using
     End Sub
 
     Private Sub ApplyUpdates( _
@@ -280,10 +280,19 @@ NextRow:
         'ConflictType.ClientDeleteServerUpdate
         'ConflictType.ClientUpdateServerUpdate()
 
-        For Each Row As DataRow In DataTable.Rows
+        Dim TextSelectCommandDobleUpdate As String = _
+            String.Format("SELECT * FROM {0} WHERE {1} AND __sysChangeTxBsn > @LastSentAnchor", _
+                            TableMetadata.TableName, _
+                            SqliteCommandGen.WhereClause)
+        Using SelectCommandDobleUpdate As New SQLite.SQLiteCommand(TextSelectCommandDobleUpdate, Me._Connection, Me._Transaction), _
+            SelectCountCommand As SQLite.SQLiteCommand = SqliteCommandGen.SelectCountCommand, _
+            UpdateCommand As SQLite.SQLiteCommand = SqliteCommandGen.UpdateCommand, _
+            InsertCommand As SQLite.SQLiteCommand = SqliteCommandGen.InsertCommand, _
+            DeleteTombStone As New SQLite.SQLiteCommand(String.Format("DELETE FROM {0}_tombstone WHERE {1}", TableMetadata.TableName, SqliteCommandGen.WhereClause), Me._Connection, Me._Transaction)
+
+            For Each Row As DataRow In DataTable.Rows
 RetryClientDeleteServerUpdate:
-            'Verify is exists ClienteDeleteServerUpdate conflict.
-            Using SelectCountCommand As SQLite.SQLiteCommand = SqliteCommandGen.SelectCountCommand
+                'Verify is exists ClienteDeleteServerUpdate conflict.
                 SetParameters(SelectCountCommand, Row)
                 If CType(SelectCountCommand.ExecuteScalar(), Integer) = 0 Then
                     Dim Conflict As SyncConflict
@@ -309,16 +318,12 @@ RetryClientDeleteServerUpdate:
                             GoTo RetryClientDeleteServerUpdate
                         Case Data.ApplyAction.RetryWithForceWrite
                             'Transform the update into insert.
-                            Using InsertCommand As SQLite.SQLiteCommand = SqliteCommandGen.InsertCommand
-                                SetParameters(InsertCommand, Row)
-                                InsertCommand.ExecuteNonQuery()
-                            End Using
+                            SetParameters(InsertCommand, Row)
+                            InsertCommand.ExecuteNonQuery()
                             If TableMetadata.SyncDirection = SyncDirection.Bidirectional Then
-                                Using DeleteTombStone As New SQLite.SQLiteCommand(String.Format("DELETE FROM {0}_tombstone WHERE {1}", TableMetadata.TableName, SqliteCommandGen.WhereClause), Me._Connection, Me._Transaction)
-                                    DeleteTombStone.Parameters.AddRange(SqliteCommandGen.PrimaryKeys.ToArray)
-                                    SetParameters(DeleteTombStone, Row)
-                                    DeleteTombStone.ExecuteNonQuery()
-                                End Using
+                                DeleteTombStone.Parameters.AddRange(SqliteCommandGen.PrimaryKeys.ToArray)
+                                SetParameters(DeleteTombStone, Row)
+                                DeleteTombStone.ExecuteNonQuery()
                             End If
                             TableProgress.ChangesApplied += 1
                             GoTo NextRow 'continue for
@@ -327,17 +332,11 @@ RetryClientDeleteServerUpdate:
                             '    Throw New SyncAbortedException("Sync error due a ClientInsertServerInsert conflict.")
                     End Select
                 End If
-            End Using
-            '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+                '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
 
 RetryClientUpdateServerUpdate:
-            'Verify is exists ClienteUpdateServerUpdate conflict.
-            If Not TableMetadata.SyncDirection = SyncDirection.DownloadOnly Then
-                Dim TextSelectCommandDobleUpdate As String = _
-                    String.Format("SELECT * FROM {0} WHERE {1} AND __sysChangeTxBsn > @LastSentAnchor", _
-                                    TableMetadata.TableName, _
-                                    SqliteCommandGen.WhereClause)
-                Using SelectCommandDobleUpdate As New SQLite.SQLiteCommand(TextSelectCommandDobleUpdate, Me._Connection, Me._Transaction)
+                'Verify is exists ClienteUpdateServerUpdate conflict.
+                If Not TableMetadata.SyncDirection = SyncDirection.DownloadOnly Then
                     Dim ClientUpdateDataTable As New DataTable
                     SelectCommandDobleUpdate.Parameters.AddRange(SqliteCommandGen.PrimaryKeys.ToArray)
                     SelectCommandDobleUpdate.Parameters.Add("@LastSentAnchor", DbType.Int64).Value = AnchorToInt64(TableMetadata.LastSentAnchor)
@@ -383,23 +382,26 @@ RetryClientUpdateServerUpdate:
                                 '    Throw New SyncAbortedException("Sync error due a ClientInsertServerInsert conflict.")
                         End Select
                     End If
-                End Using
-            End If
-            '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-            'Apply update to database.
-            Using UpdateCommand As SQLite.SQLiteCommand = SqliteCommandGen.UpdateCommand
-                SetParameters(UpdateCommand, Row)
-                If UpdateCommand.Parameters.Contains("@__sysChangeTxBsn") Then
-                    UpdateCommand.Parameters("@__sysChangeTxBsn").Value = -1 'Prevent the execution of update trigger.
                 End If
-                UpdateCommand.ExecuteNonQuery()
-            End Using
-            '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-            TableProgress.ChangesApplied += 1
+                '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+                'Apply update to database.
+                'AS-20151002: note that not all tables are updateable (if a table has 0 non-key columns,
+                'it is not considered updateable)
+                If UpdateCommand IsNot Nothing Then
+                    SetParameters(UpdateCommand, Row)
+                    If UpdateCommand.Parameters.Contains("@__sysChangeTxBsn") Then
+                        UpdateCommand.Parameters("@__sysChangeTxBsn").Value = -1 'Prevent the execution of update trigger.
+                    End If
+                    UpdateCommand.ExecuteNonQuery()
+                End If
+                '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+                TableProgress.ChangesApplied += 1
 NextRow:
-            Row.AcceptChanges()
-            RaiseEvent SyncProgress(Me, New SyncProgressEventArgs(TableMetadata, TableProgress, GroupMetadata, GroupProgress, SyncStage.ApplyingInserts))
-        Next
+                Row.AcceptChanges()
+                RaiseEvent SyncProgress(Me, New SyncProgressEventArgs(TableMetadata, TableProgress, GroupMetadata, GroupProgress, SyncStage.ApplyingInserts))
+            Next
+        End Using
+        '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
     End Sub
 
     Private Sub ApplyDeletes( _
@@ -417,16 +419,17 @@ NextRow:
         Dim DeletedRowCount As Integer = 0
         RowArray.AddRange(DataTable.Rows)
 
+        Dim TextSelectCommandDobleUpdate As String = _
+            String.Format("SELECT * FROM {0} WHERE {1} AND __sysChangeTxBsn > @LastSentAnchor", _
+                            TableMetadata.TableName, _
+                            SqliteCommandGen.WhereClause)
+        Using SelectCommandDobleUpdate As New SQLite.SQLiteCommand(TextSelectCommandDobleUpdate, Me._Connection, Me._Transaction), _
+            DeleteCommand As SQLite.SQLiteCommand = SqliteCommandGen.DeleteCommand
 
-        For Each Row As DataRow In RowArray
-            If TableMetadata.SyncDirection = SyncDirection.Bidirectional Then
+            For Each Row As DataRow In RowArray
+                If TableMetadata.SyncDirection = SyncDirection.Bidirectional Then
 RetryClientUpdateServerDelete:
-                'Verify is exists ClienteDeleteServerUpdate conflict.
-                Dim TextSelectCommandDobleUpdate As String = _
-                    String.Format("SELECT * FROM {0} WHERE {1} AND __sysChangeTxBsn > @LastSentAnchor", _
-                                    TableMetadata.TableName, _
-                                    SqliteCommandGen.WhereClause)
-                Using SelectCommandDobleUpdate As New SQLite.SQLiteCommand(TextSelectCommandDobleUpdate, Me._Connection, Me._Transaction)
+                    'Verify is exists ClienteDeleteServerUpdate conflict.
                     Dim ClientUpdateDataTable As New DataTable
                     SelectCommandDobleUpdate.Parameters.AddRange(SqliteCommandGen.PrimaryKeys.ToArray)
                     SelectCommandDobleUpdate.Parameters.Add("@LastSentAnchor", DbType.Int64).Value = AnchorToInt64(TableMetadata.LastSentAnchor)
@@ -464,20 +467,19 @@ RetryClientUpdateServerDelete:
                                 'Do nothing, continue with normally deletion.
                         End Select
                     End If
-                End Using
-            End If
-            '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-            'Apply update to database.
-            Using DeleteCommand As SQLite.SQLiteCommand = SqliteCommandGen.DeleteCommand
+                End If
+                '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+                'Apply update to database.
                 SetParameters(DeleteCommand, Row)
                 DeleteCommand.ExecuteNonQuery()
-            End Using
-            '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
-            TableProgress.ChangesApplied += 1
+                '''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+                TableProgress.ChangesApplied += 1
 NextRow:
-            Row.AcceptChanges()
-            RaiseEvent SyncProgress(Me, New SyncProgressEventArgs(TableMetadata, TableProgress, GroupMetadata, GroupProgress, SyncStage.ApplyingDeletes))
-        Next
+                Row.AcceptChanges()
+                RaiseEvent SyncProgress(Me, New SyncProgressEventArgs(TableMetadata, TableProgress, GroupMetadata, GroupProgress, SyncStage.ApplyingDeletes))
+            Next
+
+        End Using
 
         SyncTracer.Info(2, "Deletes Applied: {0}", TableProgress.ChangesApplied)
         If TableProgress.ChangesFailed > 0 Then
@@ -549,12 +551,13 @@ NextRow:
 
 
     Private Function GetRowsChanges(ByVal Table As DataTable, ByVal RowState As DataRowState) As Integer
-        Dim NewDataTable As DataTable = Table.GetChanges(RowState)
-        If NewDataTable IsNot Nothing Then
-            Return NewDataTable.Rows.Count
-        Else
-            Return Nothing
-        End If
+        Dim Counter As Integer = 0
+        For Each Row As DataRow In Table.Rows
+            If Row.RowState = RowState Then
+                Counter = Counter + 1
+            End If
+        Next
+        Return Counter
     End Function
 
     'Private Sub RowUpdated(ByVal sender As Object, ByVal e As System.Data.Common.RowUpdatedEventArgs)
@@ -912,7 +915,14 @@ NextRow:
 
             'Column Type
             If Not Column.AutoIncrement Then
-                StringBuilder.AppendFormat(TypeMapping.GetCreateTableType(Column.DataType, Column.ProviderDataType))
+                ' HACKHACKHACK: break encapsulation here
+                Dim ProviderDataType As String
+
+                Dim p As System.Reflection.FieldInfo = Column.GetType().GetField("_parentDataset", System.Reflection.BindingFlags.NonPublic Or System.Reflection.BindingFlags.Instance)
+                Dim ds As DataSet = CType(p.GetValue(Column), DataSet)
+                ProviderDataType = CType(ds.Tables(Table.TableName).Columns(Column.ColumnName).ExtendedProperties("DataTypeName"), String)
+
+                StringBuilder.AppendFormat(TypeMapping.GetCreateTableType(Column.DataType, ProviderDataType))
             Else
                 'AUTOINCREMENT is only allowed on an INTEGER PRIMARY KEY
                 StringBuilder.AppendFormat("INTEGER")
@@ -943,7 +953,8 @@ NextRow:
             End If
 
             'Unique?
-            If Column.Unique Then
+            ' AS-20150929: unique is implied by primary key
+            If Column.Unique And Not (System.Array.IndexOf(Table.PrimaryKey, Column.ColumnName) >= 0 AndAlso Table.PrimaryKey.Length = 1) Then
                 StringBuilder.Append(" UNIQUE ")
             End If
 
@@ -968,6 +979,36 @@ NextRow:
             StringBuilder.Append(",")
             StringBuilder.AppendFormat("PRIMARY KEY ({0})", String.Join(",", Table.PrimaryKey))
         End If
+
+        'Uniqueness constraints.
+        ' HACKHACKHACK: break encapsulation here
+        ' AS-20150915: this is especially important for Dataphor
+        ' AS-20150929: disabling (we always use clustering keys on the server)
+        'Dim pp As System.Reflection.FieldInfo = Table.GetType().GetField("_parentDataset", System.Reflection.BindingFlags.NonPublic Or System.Reflection.BindingFlags.Instance)
+        'Dim pds As DataSet = CType(pp.GetValue(Table), DataSet)
+        'Dim cs As ConstraintCollection = pds.Tables(Table.TableName).Constraints
+        'If cs.Count > 0 Then
+        '    For i As Integer = 0 To cs.Count - 1
+        '        Dim ctr As Constraint = cs(i)
+        '        If Not ctr.GetType().Equals(GetType(UniqueConstraint)) Then
+        '            Continue For
+        '        End If
+        '        Dim uc = CType(ctr, UniqueConstraint)
+        '        If uc.IsPrimaryKey Then
+        '            Continue For ' already handled
+        '        End If
+        '        StringBuilder.Append(",")
+        '        StringBuilder.Append("UNIQUE (")
+        '        For j As Integer = 0 To uc.Columns.Count - 1
+        '            StringBuilder.Append(Table.Columns(j).ColumnName)
+        '            'not last column?
+        '            If j < uc.Columns.Count - 1 Then
+        '                StringBuilder.Append(", ")
+        '            End If
+        '        Next
+        '        StringBuilder.Append(")")
+        '    Next
+        'End If
 
         'Foreign key constraints
         'NOTE: SQLite doesn't verify that constraints are valid during creation

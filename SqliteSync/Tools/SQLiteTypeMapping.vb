@@ -6,48 +6,38 @@ Namespace Tools
 
         Sub New()
             With Me._DbTypeXCreateTable
-                .Add(DbType.Byte, "TINYINT")
-                .Add(DbType.Int16, "SmallInt")
-                .Add(DbType.Int32, "INT")
-                .Add(DbType.Int64, "INTEGER")
-                .Add(DbType.String, "VARCHAR")
-                .Add(DbType.StringFixedLength, "CHAR")
-                .Add(DbType.Double, "DOUBLE")
-                .Add(DbType.Single, "REAL")
-                .Add(DbType.Boolean, "BIT")
-                .Add(DbType.Decimal, "DECIMAL")
-                .Add(DbType.DateTime, "DATETIME")
-                .Add(DbType.Binary, "BLOB")
-                .Add(DbType.Guid, "GUID")
-                .Add(DbType.Time, "TIME")
+                .Add(DbType.Byte, "System.Byte")
+                .Add(DbType.Int16, "System.Short")
+                .Add(DbType.Int32, "System.Integer")
+                .Add(DbType.Int64, "System.Long")
+                .Add(DbType.String, "System.String")
+                .Add(DbType.Double, "System.Double")
+                .Add(DbType.Boolean, "System.Boolean")
+                .Add(DbType.Decimal, "System.Decimal")
+                .Add(DbType.Date, "System.Date")
+                .Add(DbType.DateTime, "System.DateTime")
+                .Add(DbType.Time, "System.Time")
+                .Add(DbType.Binary, "System.Binary")
+                '.Add(DbType.Binary, "System.Graphic") ' causes an error
+                .Add(DbType.Guid, "System.Guid")
             End With
             With Me._SupportedSqlTypes
-                .Add("int")
-                .Add("smallint")
-                .Add("bit")
-                .Add("float")
-                .Add("real")
-                .Add("nvarchar")
-                .Add("varchar")
-                .Add("timestamp")
-                .Add("varbinary")
-                .Add("image")
-                .Add("text")
-                .Add("ntext")
-                .Add("bigint")
-                .Add("char")
-                .Add("numeric")
-                .Add("binary")
-                .Add("smalldatetime")
-                .Add("smallmoney")
-                .Add("money")
-                .Add("tinyint")
-                .Add("uniqueidentifier")
-                .Add("xml")
-                .Add("sql_variant")
-                .Add("decimal")
-                .Add("nchar")
-                .Add("datetime")
+                .Add("System.Byte")
+                .Add("System.Integer")
+                .Add("System.Boolean")
+                .Add("System.Double")
+                .Add("System.Decimal")
+                .Add("System.Time")
+                .Add("System.Binary")
+                .Add("System.Graphic")
+                .Add("System.String")
+                .Add("System.Decimal")
+                .Add("System.Money")
+                .Add("System.Short")
+                .Add("System.Guid")
+                .Add("System.DateTime")
+                .Add("System.Date")
+                .Add("System.UserID")
             End With
 
         End Sub
@@ -75,37 +65,38 @@ Namespace Tools
         ''' <returns></returns>
         ''' <remarks></remarks>
         Private Function GetCreateTableFromSqlServerType(ByVal SqlType As String) As String
-
-            SqlType = SqlType.ToLower()
-
             If Not Me._SupportedSqlTypes.Contains(SqlType) Then
                 Return ""
             End If
 
-            If SqlType = "timestamp" Then
-                SqlType = "blob"
-            ElseIf SqlType = "datetime" OrElse SqlType = "smalldatetime" Then
+            If SqlType = "System.Time" Then
                 SqlType = "timestamp"
-            ElseIf SqlType = "decimal" Then
+            ElseIf SqlType = "System.DateTime" OrElse SqlType = "Date" Then
+                SqlType = "timestamp"
+            ElseIf SqlType = "System.Decimal" Then
                 SqlType = "numeric"
-            ElseIf SqlType = "money" OrElse SqlType = "smallmoney" Then
+            ElseIf SqlType = "System.Money" Then
                 SqlType = "numeric"
-            ElseIf SqlType = "binary" OrElse SqlType = "varbinary" OrElse SqlType = "image" Then
+            ElseIf SqlType = "System.Binary" OrElse SqlType = "System.Graphic" Then
                 SqlType = "blob"
-            ElseIf SqlType = "tinyint" Then
-                SqlType = "smallint"
-            ElseIf SqlType = "bigint" Then
-                SqlType = "integer"
-            ElseIf SqlType = "sql_variant" Then
-                SqlType = "blob"
-            ElseIf SqlType = "xml" Then
-                SqlType = "varchar"
-            ElseIf SqlType = "uniqueidentifier" Then
+            ElseIf SqlType = "System.Byte" Then
+                SqlType = "tinyint"
+            ElseIf SqlType = "System.Long" Then
+                SqlType = "bigint"
+            ElseIf SqlType = "System.Guid" Then
                 SqlType = "uniqueidentifier" '"GUID"
-            ElseIf SqlType = "ntext" Then
+            ElseIf SqlType = "System.String" Then
                 SqlType = "text"
-            ElseIf SqlType = "nchar" Then
+            ElseIf SqlType = "System.Boolean" Then
                 SqlType = "char"
+            ElseIf SqlType = "System.Double" Then
+                SqlType = "float"
+            ElseIf SqlType = "System.Short" Then
+                SqlType = "smallint"
+            ElseIf SqlType = "System.Integer" Then
+                SqlType = "integer"
+            ElseIf SqlType = "System.UserID" Then ' sigh
+                SqlType = "text"
             End If
 
             Return SqlType
@@ -163,6 +154,40 @@ Namespace Tools
             '    End Try
             'End If
             Return p1.DbType
+        End Function
+
+        Public Function GetDbTypeFromProviderType(ByVal ProviderType As String) As DbType
+            If ProviderType = "System.Byte" Then
+                Return DbType.Byte
+            ElseIf ProviderType = "System.Short" Then
+                Return DbType.Int16
+            ElseIf ProviderType = "System.Integer" Then
+                Return DbType.Int32
+            ElseIf ProviderType = "System.Long" Then
+                Return DbType.Int64
+            ElseIf ProviderType = "System.String" Then
+                Return DbType.String
+            ElseIf ProviderType = "System.Double" Then
+                Return DbType.Double
+            ElseIf ProviderType = "System.Boolean" Then
+                Return DbType.Boolean
+            ElseIf ProviderType = "System.Decimal" Then
+                Return DbType.Decimal
+            ElseIf ProviderType = "System.Date" Then
+                Return DbType.Date
+            ElseIf ProviderType = "System.DateTime" Then
+                Return DbType.DateTime
+            ElseIf ProviderType = "System.Time" Then
+                Return DbType.Time
+            ElseIf ProviderType = "System.Binary" Then
+                Return DbType.Binary
+            ElseIf ProviderType = "System.Guid" Then
+                Return DbType.Guid
+            ElseIf ProviderType = "System.UserID" Then
+                Return DbType.String
+            Else
+                Return DbType.Binary
+            End If
         End Function
 
         Private Function GetCreateTableTypeFromDbType(ByVal Type As DbType) As String

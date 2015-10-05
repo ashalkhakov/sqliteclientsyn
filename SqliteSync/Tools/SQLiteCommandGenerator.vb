@@ -52,6 +52,7 @@ Namespace Tools
                             Case "__sysChangeTxBsn"
                                 Me._ContainsSysUpdate = True
                             Case Else
+
                                 Dim Param As New SQLite.SQLiteParameter( _
                                         "@" & CType(Row.Item("ColumnName"), String), _
                                         Row.Item("ProviderType"), _
@@ -205,18 +206,27 @@ Namespace Tools
 
         Public ReadOnly Property UpdateCommand() As SQLite.SQLiteCommand
             Get
+                If _UpdateCommand Is Nothing Then
+                    Return Nothing
+                End If
                 Return _UpdateCommand.Clone
             End Get
         End Property
 
         Public ReadOnly Property DeleteCommand() As SQLite.SQLiteCommand
             Get
+                If _DeleteCommand Is Nothing Then
+                    Return Nothing
+                End If
                 Return _DeleteCommand.Clone
             End Get
         End Property
 
         Public ReadOnly Property InsertCommand() As SQLite.SQLiteCommand
             Get
+                If _InsertCommand Is Nothing Then
+                    Return Nothing
+                End If
                 Return _InsertCommand.Clone
             End Get
         End Property
@@ -235,6 +245,9 @@ Namespace Tools
 
         Public ReadOnly Property SelectTombstoneCommand() As SQLite.SQLiteCommand
             Get
+                If _SelectTombstoneCommand Is Nothing Then
+                    Return Nothing
+                End If
                 Return Me._SelectTombstoneCommand.Clone
             End Get
         End Property
